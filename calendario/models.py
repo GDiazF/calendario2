@@ -517,7 +517,8 @@ def obtener_estado_final_personal_fecha(personal, fecha):
     
     # Debug: imprimir para verificar
     print(f"DEBUG: {personal.nombre} - {fecha}")
-    print(f"  Estados encontrados: {[f'{x['estado'].nombre}({x['prioridad']})' for x in todos_estados]}")
+    estados_info = [f"{x['estado'].nombre}({x['prioridad']})" for x in todos_estados]
+    print(f"  Estados encontrados: {estados_info}")
     print(f"  Prioridad máxima: {prioridad_maxima}")
     print(f"  Estados seleccionados: {[e.nombre for e in estados_misma_prioridad]}")
     
