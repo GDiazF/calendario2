@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendario de Planificación</title>
+    {% csrf_token %}
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             margin: 0;
@@ -12,210 +15,667 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            font-size: 14px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #fafafa;
+            color: #333;
+            line-height: 1.5;
         }
 
         .container {
-            max-width: 100%;
+            width: 100%;
             margin: 0;
             padding: 0;
         }
 
-        /* Header Section */
+        /* Header Section - Clean and Modern */
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #2c3e50;
             color: white;
-            padding: 15px 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 12px 0;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .header-content {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 20px;
+            width: 100%;
+            margin: 0;
+            padding: 0 20px;
         }
 
-        .header-left {
+        .header-main {
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 20px;
-            flex: 1;
-            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 12px;
         }
 
         .header-title {
-            font-size: 1.8em;
-            font-weight: 600;
-            white-space: nowrap;
+            font-size: 1.8rem;
+            font-weight: 300;
+            color: #ecf0f1;
+            text-align: center;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
         }
 
         .search-section {
             display: flex;
             align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
         }
 
         .search-label {
             font-weight: 500;
-            white-space: nowrap;
+            color: #bdc3c7;
+            font-size: 0.9rem;
         }
 
         .search-input {
-            padding: 8px 12px;
+            padding: 6px 12px;
             border: none;
-            border-radius: 5px;
-            width: 250px;
+            border-radius: 6px;
+            background: #34495e;
+            color: white;
+            width: 200px;
             font-size: 14px;
+        }
+
+        .search-input::placeholder {
+            color: #95a5a6;
+        }
+
+        .search-input:focus {
+            outline: none;
+            background: #2c3e50;
+            box-shadow: 0 0 0 2px #3498db;
         }
 
         .filters {
             display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
+            gap: 12px;
         }
 
         .filter-dropdown {
-            padding: 8px 12px;
+            padding: 6px 12px;
             border: none;
-            border-radius: 5px;
-            background: white;
-            color: #333;
+            border-radius: 6px;
+            background: #34495e;
+            color: white;
             font-size: 14px;
-            min-width: 150px;
-            max-width: 150px;
+            min-width: 140px;
+            cursor: pointer;
         }
 
-        .header-right {
+        .filter-dropdown:focus {
+            outline: none;
+            background: #2c3e50;
+            box-shadow: 0 0 0 2px #3498db;
+        }
+
+        .filter-dropdown option {
+            background: #2c3e50;
+            color: white;
+        }
+
+        /* Estilos para el filtro de cargo con checkboxes múltiples */
+        .cargo-filter-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .cargo-filter-dropdown {
+            position: relative;
+            min-width: 180px;
+        }
+
+        .cargo-filter-selected {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #34495e;
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .cargo-filter-selected:hover {
+            background: #2c3e50;
+            box-shadow: 0 0 0 2px #3498db;
+        }
+
+        .dropdown-arrow {
+            font-size: 12px;
+            transition: transform 0.2s ease;
+        }
+
+        .cargo-filter-dropdown.open .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .cargo-filter-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 2px;
+        }
+
+        .cargo-option {
             display: flex;
             align-items: center;
-            gap: 15px;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            font-size: 14px;
+            color: #333;
+        }
+
+        .cargo-option:hover {
+            background-color: #f8f9fa;
+        }
+
+        .cargo-option input[type="checkbox"] {
+            margin-right: 8px;
+            cursor: pointer;
         }
 
         .date-navigation {
             display: flex;
+            justify-content: center;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
         }
 
-        .nav-arrow {
-            background: rgba(255, 255, 255, 0.2);
+        .nav-btn {
+            background: #34495e;
             border: none;
             color: white;
             padding: 8px 12px;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 16px;
-            transition: all 0.3s ease;
+            font-size: 14px;
+            transition: all 0.2s ease;
         }
 
-        .nav-arrow:hover {
-            background: rgba(255, 255, 255, 0.3);
+        .nav-btn:hover {
+            background: #2c3e50;
+            transform: translateY(-1px);
         }
 
-        .current-year, .current-month {
-            background: rgba(255, 255, 255, 0.9);
-            color: #333;
-            padding: 8px 15px;
-            border-radius: 5px;
+        .current-date-display {
+            background: #ecf0f1;
+            color: #2c3e50;
+            padding: 8px 16px;
+            border-radius: 6px;
             font-weight: 600;
             min-width: 80px;
             text-align: center;
+            font-size: 1rem;
         }
 
         .today-btn {
-            background: #007bff;
+            background: #27ae60;
+            border: none;
             color: white;
             padding: 8px 16px;
-            border: none;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
         }
 
         .today-btn:hover {
-            background: #0056b3;
+            background: #229954;
+            transform: translateY(-1px);
         }
 
-        /* Status Legend */
+        /* Calendar Navigation - Below Legend */
+        .calendar-navigation {
+            background: #f8f9fa;
+            padding: 12px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .nav-content {
+            width: 100%;
+            margin: 0;
+            padding: 0 20px;
+        }
+
+        /* Status Legend - Clean Cards */
         .status-legend {
             background: white;
-            padding: 10px 20px;
-            border-bottom: 1px solid #e9ecef;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            padding: 12px 0;
+            border-bottom: 1px solid #ecf0f1;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .legend-content {
+            width: 100%;
+            margin: 0;
+            padding: 0 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
         }
 
         .legend-title {
             font-weight: 600;
-            color: #333;
-            margin-bottom: 10px;
+            color: #2c3e50;
+            font-size: 1rem;
+            margin: 0;
+            flex-shrink: 0;
         }
 
         .legend-items {
             display: flex;
-            gap: 20px;
+            gap: 12px;
             flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
         }
 
         .legend-item {
+            background: #f8f9fa;
+            padding: 6px 12px;
+            border-radius: 20px;
+            border: 1px solid #e9ecef;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-size: 0.9rem;
+            color: #495057;
         }
 
         .legend-color {
-            width: 20px;
-            height: 20px;
+            width: 16px;
+            height: 16px;
             border-radius: 3px;
-            border: 1px solid #ddd;
+            border: 1px solid #dee2e6;
         }
 
-        .legend-text {
-            font-size: 13px;
-            color: #555;
+                 /* Estilos para estados múltiples */
+         .status-cell .multi-estado {
+             display: block !important;
+             height: 50% !important;
+             width: 100% !important;
+             text-align: center !important;
+             line-height: 1 !important;
+             padding: 0 !important;
+             margin: 0 !important;
+             vertical-align: middle !important;
+             font-size: 9px !important;
+             overflow: hidden !important;
+             display: flex !important;
+             align-items: center !important;
+             justify-content: center !important;
+         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            animation: modalSlideIn 0.3s ease;
+        }
+
+        @keyframes modalSlideIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9) translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1.2rem;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7f8c8d;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        .modal-close:hover {
+            background: #ecf0f1;
+            color: #2c3e50;
+        }
+
+        .modal-body {
+            padding: 20px;
+        }
+
+        .info-section {
+            margin-bottom: 15px;
+        }
+
+        .info-section h4 {
+            margin: 0 0 5px 0;
+            color: #34495e;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .info-section p {
+            margin: 0;
+            color: #2c3e50;
+            font-size: 1rem;
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+        }
+
+        /* Estilos para formularios */
+        .form-section {
+            margin-bottom: 20px;
+        }
+
+        .form-section label {
+            display: block;
+            margin-bottom: 5px;
+            color: #34495e;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-section input,
+        .form-section select,
+        .form-section textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.2s ease;
+            box-sizing: border-box;
+        }
+
+        .form-section input:focus,
+        .form-section select:focus,
+        .form-section textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .form-section textarea {
+            resize: vertical;
+            min-height: 60px;
+            font-family: inherit;
+        }
+
+        .form-section input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+            transform: scale(1.2);
+        }
+
+        .form-section label:has(input[type="checkbox"]) {
+            display: flex;
+            align-items: center;
+            font-weight: normal;
+            cursor: pointer;
+        }
+
+        .form-readonly {
+            padding: 8px 12px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            border-left: 3px solid #3498db;
+            margin: 0;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+        }
+
+        .form-actions button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        #btnGuardar {
+            background: #27ae60;
+            color: white;
+        }
+
+        #btnGuardar:hover {
+            background: #219a52;
+        }
+
+        #btnEliminar {
+            background: #e74c3c;
+            color: white;
+        }
+
+        #btnEliminar:hover {
+            background: #c0392b;
+        }
+
+        .form-actions button:last-child {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .form-actions button:last-child:hover {
+            background: #7f8c8d;
+        }
+
+        /* Estilos para lista de asignaciones */
+        .asignaciones-lista {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        .asignacion-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.2s ease;
+        }
+
+        .asignacion-item:last-child {
+            border-bottom: none;
+        }
+
+        .asignacion-item:hover {
+            background-color: #f8f9fa;
+        }
+
+        .asignacion-info {
+            flex: 1;
+        }
+
+        .asignacion-info h5 {
+            margin: 0 0 5px 0;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        .asignacion-info p {
+            margin: 0;
+            color: #666;
+            font-size: 0.8rem;
+        }
+
+        .asignacion-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-asignacion {
+            padding: 5px 10px;
+            border: none;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-editar {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-editar:hover {
+            background: #2980b9;
+        }
+
+        .btn-eliminar-asig {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .btn-eliminar-asig:hover {
+            background: #c0392b;
+        }
+
+        #btnNuevaAsignacion {
+            background: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        #btnNuevaAsignacion:hover {
+            background: #219a52;
         }
 
         /* Main Content */
         .main-content {
-            height: calc(100vh - 200px);
-            overflow: hidden;
-        }
-
-        /* Calendar Container */
-        .calendar-container {
-            flex: 1;
-            background: white;
-            overflow: auto;
-        }
-
-        .calendar-table {
             width: 100%;
+            margin: 0;
+            padding: 12px;
+        }
+
+        /* Calendar Container - Clean Design */
+            .calendar-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+            overflow: auto;
+            border: 1px solid #ecf0f1;
+            }
+            
+            .calendar-table {
+                width: 100%;
             border-collapse: collapse;
             min-width: max-content;
         }
 
         .calendar-table th,
         .calendar-table td {
-            border: 1px solid #e9ecef;
-            padding: 8px;
+            border: 1px solid #ecf0f1;
+            padding: 0;
             text-align: center;
             vertical-align: middle;
-            font-size: 12px;
         }
 
-        .calendar-table th {
-            background: #f8f9fa;
-            font-weight: 600;
-            color: #333;
-            position: sticky;
-            top: 0;
-            z-index: 10;
+        /* ELIMINAR COMPLETAMENTE EL HOVER EN LA PRIMERA FILA (HEADERS) */
+        .calendar-table tr:first-child:hover,
+        .calendar-table tr:first-child:hover th,
+        .calendar-table tr:first-child:hover td {
+            background: #f8f9fa !important;
+            box-shadow: none !important;
+            transform: none !important;
+            transition: none !important;
+        }
+
+        /* REGLA ADICIONAL: Asegurar que la primera fila NO tenga hover */
+        .calendar-table tr:first-child {
+            pointer-events: none;
+        }
+
+        .calendar-table tr:first-child th,
+        .calendar-table tr:first-child td {
+            pointer-events: none;
+        }
+
+        /* ELIMINAR HOVER EN LA COLUMNA PERSONAL DEL HEADER */
+        .personal-header-cell:hover {
+            background: #f8f9fa !important;
+            cursor: default !important;
         }
 
         /* Sticky personal column */
@@ -230,220 +690,242 @@
             z-index: 10 !important;
         }
 
-        /* Efecto de transición suave solo para celdas del calendario, NO para headers */
-        .calendar-table tbody tr td.status-cell {
-            transition: background-color 0.2s ease;
+        .personal-header-cell {
+            background: #f8f9fa;
+            padding: 8px 12px;
+            font-weight: 600;
+            color: #2c3e50;
+            border-right: 2px solid #ecf0f1;
+            min-width: 260px;
+            text-align: left;
+            }
+            
+            .date-header {
+            background: #f8f9fa;
+            padding: 8px 6px;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+            min-width: 40px;
+            cursor: default;
         }
 
-        /* Hover individual de celdas del calendario (excluyendo el header del día actual) */
-        .status-cell:hover:not(.today-column) {
-            background: #f0f8ff !important;
-            box-shadow: inset 0 0 0 2px #007bff;
-        }
-
-
-
-        /* Resaltado de la fila completa con borde */
-        .calendar-table tbody tr:hover {
-            box-shadow: 0 0 0 2px #007bff;
-            border-radius: 4px;
-        }
-
-        /* Efecto de hover en la celda del personal */
-        .person-info-cell:hover {
-            background: #e3f2fd !important;
-            cursor: pointer;
-        }
-
-        /* Hover de toda la fila del calendario */
-        .calendar-table tbody tr:hover .person-info-cell {
-            background: #e3f2fd !important;
-        }
-
-        .calendar-table tbody tr:hover td:not(.person-info-cell):not(.today-column) {
-            background: #e3f2fd !important;
-        }
-
-        /* IMPORTANTE: El hover de filas NO debe afectar a la columna del día actual */
-        .calendar-table tbody tr:hover .today-column {
-            background: rgba(0, 123, 255, 0.08) !important;
-        }
-
-        /* REGLA CRÍTICA: La columna del día actual SIEMPRE mantiene su color */
-        .today-column,
-        .today-column:hover,
-        .today-column:focus,
-        .today-column:active,
-        .today-column:visited,
-        tr:hover .today-column,
-        tr:focus .today-column,
-        tr:active .today-column {
-            background: rgba(0, 123, 255, 0.08) !important;
-            transition: none !important;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        /* REGLA CRÍTICA: El header del día actual SIEMPRE mantiene su color azul */
-        .date-header.current-day,
-        .date-header.current-day:hover,
-        .date-header.current-day:focus,
-        .date-header.current-day:active,
-        .date-header.current-day:visited,
-        tr:hover .date-header.current-day,
-        tr:focus .date-header.current-day,
-        tr:active .date-header.current-day {
-            background: #007bff !important;
-            color: white !important;
-            transition: none !important;
-            transform: none !important;
-            box-shadow: none !important;
-            outline: none !important;
-            cursor: default !important;
-        }
-
-        /* Resaltado sutil de la columna del día actual */
-        .current-day {
-            background: #007bff !important;
-            font-weight: bold;
+        .date-header.current-day {
+            background: #3498db !important;
             color: white !important;
         }
-
-        .current-day .date-number,
-        .current-day .date-day {
+        
+        .date-header.current-day .date-day {
             color: white !important;
-        }
-
-        /* Resaltado de toda la columna del día actual */
-        .today-column {
-            background: rgba(0, 123, 255, 0.08) !important;
-        }
-
-        /* ELIMINAR COMPLETAMENTE CUALQUIER HOVER EN EL DÍA ACTUAL */
-        .date-header.current-day,
-        .date-header.current-day:hover,
-        .date-header.current-day:focus,
-        .date-header.current-day:active,
-        .date-header.current-day:visited {
-            background: #007bff !important;
-            color: white !important;
-            transition: none !important;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        /* ELIMINAR HOVER EN TODA LA COLUMNA DEL DÍA ACTUAL */
-        .today-column:hover,
-        .today-column:focus,
-        .today-column:active {
-            background: rgba(0, 123, 255, 0.08) !important;
-            transition: none !important;
-            transform: none !important;
-            box-shadow: none !important;
-        }
-
-        /* ELIMINAR HOVER EN LAS CELDAS DEL DÍA ACTUAL */
-        .status-cell.today-column:hover,
-        .status-cell.today-column:focus,
-        .status-cell.today-column:active {
-            background: rgba(0, 123, 255, 0.08) !important;
-            transition: none !important;
-            transform: none !important;
-            box-shadow: none !important;
-            cursor: default !important;
-        }
-
-        /* ELIMINAR HOVER EN EL HEADER DEL DÍA ACTUAL */
-        .current-day:hover,
-        .current-day:focus,
-        .current-day:active {
-            background: #007bff !important;
-            color: white !important;
-            transition: none !important;
-            transform: none !important;
-            box-shadow: none !important;
-            outline: none !important;
-        }
-
-        /* REGLA FINAL: ELIMINAR CUALQUIER HOVER EN CELDAS DEL DÍA ACTUAL */
-        .status-cell.today-column,
-        .status-cell.today-column:hover,
-        .status-cell.today-column:focus,
-        .status-cell.today-column:active,
-        .status-cell.today-column:visited {
-            background: rgba(0, 123, 255, 0.08) !important;
-            transition: none !important;
-            transform: none !important;
-            box-shadow: none !important;
-            cursor: default !important;
-            pointer-events: none !important;
-        }
-
-
-        .date-header {
-            min-width: 55px;
-            padding: 8px 4px;
         }
 
         .date-number {
             font-weight: 600;
             font-size: 14px;
             margin-bottom: 2px;
+            display: block;
         }
 
         .date-day {
             font-size: 11px;
-            color: #666;
+            color: #7f8c8d;
             text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .person-column {
-            width: 350px;
+        .person-info-cell {
             background: #f8f9fa;
+            padding: 6px 12px;
             text-align: left;
-            padding: 15px;
+            border-right: 2px solid #ecf0f1;
+            min-width: 260px;
         }
 
-        .person-column .person-name {
+        .person-name {
             font-weight: 600;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .person-column .person-assignment {
-            font-size: 11px;
-            color: #666;
+            color: #2c3e50;
             margin-bottom: 3px;
+            font-size: 13px;
+            text-align: left;
+            line-height: 1.2;
         }
 
-        .person-column .person-role {
+        .person-assignment {
             font-size: 11px;
-            color: #888;
+            color: #3498db;
+            margin-bottom: 2px;
+            font-weight: 500;
+            text-align: left;
+            line-height: 1.2;
         }
 
-        /* Status Cells */
-        .status-cell {
-            min-width: 55px;
-            height: 32px;
+        .person-role {
+            font-size: 10px;
+            color: #ff8c00;
+            font-style: italic;
+            text-align: left;
+            line-height: 1.2;
+        }
+
+        /* Estilo para el ícono de información moderno */
+        .fas.fa-info-circle {
+            color: #3498db;
+            font-size: 12px;
+            margin-left: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
-            position: relative;
-            background: white;
         }
 
-        /* Hover solo para celdas que NO son del día actual */
-        .status-cell:not(.today-column):hover {
-            background: #f8f9fa;
-            transform: scale(1.02);
+        .fas.fa-info-circle:hover {
+            color: #2980b9;
+            transform: scale(1.1);
+        }
+
+        /* Estilos para botones de acción del personal */
+        .person-info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+                width: 100%;
+        }
+
+        .person-details {
+            flex: 1;
+        }
+
+        .person-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-left: 8px;
+        }
+
+        .btn-faena-manager {
+            background: #27ae60;
+            border: 1px solid #27ae60;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 12px;
+            padding: 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+                .btn-faena-manager:hover {
+            background: #219a52;
+            border-color: #219a52;
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        /* Estilo para el ícono de calendario en el botón */
+        .btn-faena-manager .fas.fa-calendar-check {
+            color: white;
+            font-size: 10px;
+        }
+
+        .btn-faena-manager:hover .fas.fa-calendar-check {
+            color: white;
+        }
+            
+            .status-cell {
+            min-width: 40px;
+            height: 35px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            background: white;
+            font-weight: 700;
+            font-size: 11px;
+            border-radius: 6px;
+            margin: 2px;
+            text-align: center;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            line-height: 35px;
+            padding: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .status-cell:hover:not(.today-column) {
+            background: #f1f3f4;
             z-index: 5;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
+        .status-cell.today-column {
+            background: rgba(52, 152, 219, 0.15);
+            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+            border-radius: 4px;
+        }
 
+        /* Resaltar toda la columna del día actual */
+        .date-header.current-day {
+            border-radius: 4px;
+        }
+
+        /* Efecto de columna completa para el día actual */
+        .calendar-table td.today-column::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(52, 152, 219, 0.08);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .calendar-table td.today-column {
+            position: relative;
+        }
+
+        /* Asegurar que el texto dentro de las celdas esté centrado */
+        .status-cell span,
+        .status-cell div {
+            display: inline-block;
+            vertical-align: middle;
+            line-height: 1;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Row Hover Effects - Estilo Bootstrap */
+        .calendar-table tbody tr {
+            transition: opacity 0.3s ease, background-color 0.2s ease;
+        }
+        
+        .calendar-table tbody tr:hover {
+            background-color: rgba(13, 110, 253, 0.075) !important;
+        }
+
+        .calendar-table tbody tr:hover .person-info-cell {
+            background-color: rgba(13, 110, 253, 0.075) !important;
+        }
+
+        .calendar-table tbody tr:hover .status-cell {
+            position: relative !important;
+        }
+
+        .calendar-table tbody tr:hover .status-cell::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.15);
+            pointer-events: none;
+        }
 
         /* Responsive Design */
-        /* Pantallas de 1366x768 - ancho fijo para evitar distribución extraña */
-        @media (min-width: 1366px) and (max-width: 1919px) {
+        @media (min-width: 1366px) {
             .calendar-container {
                 overflow: visible;
             }
@@ -454,39 +936,16 @@
             }
             
             .date-header {
-                min-width: 55px;
-                width: 55px; /* Ancho fijo para evitar distribución extraña */
+                min-width: 40px;
+                width: calc((100% - 260px) / 31);
             }
             
             .status-cell {
-                min-width: 55px;
-                width: 55px; /* Ancho fijo para evitar distribución extraña */
+                min-width: 40px;
+                width: calc((100% - 260px) / 31);
             }
         }
 
-        /* Pantallas de 1920px y más grandes - responsivo completo */
-        @media (min-width: 1920px) {
-            .calendar-container {
-                overflow: visible;
-            }
-            
-            .calendar-table {
-                width: 100%;
-                min-width: auto;
-            }
-            
-            .date-header {
-                min-width: 55px;
-                width: calc((100% - 320px) / 31); /* Distribuir el ancho restante entre los días */
-            }
-            
-            .status-cell {
-                min-width: 55px;
-                width: calc((100% - 320px) / 31);
-            }
-        }
-
-        /* Pantallas menores a 1366px - NO responsivo, scroll horizontal */
         @media (max-width: 1365px) {
             .calendar-container {
                 overflow-x: auto;
@@ -497,169 +956,240 @@
             }
             
             .date-header {
-                min-width: 55px;
-                width: 55px;
+                min-width: 40px;
+                width: 40px;
             }
             
             .status-cell {
-                min-width: 55px;
-                width: 55px;
+                min-width: 40px;
+                width: 40px;
             }
         }
 
-        @media (max-width: 1200px) {
+        /* REGLA ESPECÍFICA PARA 1366px y similares - MÁXIMA PRIORIDAD */
+        @media (max-width: 1400px) and (min-width: 1300px) {
             .header-content {
-                flex-direction: column;
-                align-items: stretch;
+                padding: 0 8px !important;
             }
             
-            .header-left, .header-right {
-                justify-content: center;
-            }
-            
-            .calendar-container {
-                overflow-x: auto;
-            }
-        }
-
-        /* Header responsivo para pantallas medianas */
-        @media (max-width: 1600px) {
-            .header-content {
-                gap: 15px;
-            }
-            
-            .header-left {
-                gap: 15px;
+            .header-controls {
+                flex-direction: column !important;
+                gap: 8px !important;
+                align-items: center !important;
+                width: 100% !important;
             }
             
             .search-section {
-                gap: 8px;
+                width: 100% !important;
+                justify-content: center !important;
             }
             
             .filters {
+                width: 100% !important;
+                justify-content: center !important;
+                flex-wrap: wrap !important;
+                gap: 10px !important;
+            }
+            
+            .search-input {
+                width: 200px !important;
+                font-size: 12px !important;
+            }
+            
+            .filter-dropdown {
+                min-width: 120px !important;
+                font-size: 12px !important;
+            }
+            
+            .cargo-filter-dropdown {
+                min-width: 140px !important;
+                font-size: 12px !important;
+            }
+            
+            .cargo-filter-selected {
+                font-size: 12px !important;
+                padding: 5px 10px !important;
+            }
+            
+            .search-label {
+                font-size: 0.8rem !important;
+            }
+        }
+
+        /* SOLUCIÓN COMPLETA PARA 1366px - HEADER Y TABLA RESPONSIVOS */
+        @media screen and (max-width: 1366px) and (min-width: 1200px) {
+            /* Header responsive */
+            .header-controls {
+                flex-direction: column !important;
+                gap: 10px !important;
+                align-items: center !important;
+            }
+            
+            .search-section,
+            .filters {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+            
+            .filters {
+                flex-wrap: wrap !important;
+                gap: 10px !important;
+            }
+            
+            /* Tabla del calendario más compacta para 1366px */
+            .personal-header-cell {
+                min-width: 200px !important;
+                font-size: 13px !important;
+            }
+            
+            .person-info-cell {
+                min-width: 200px !important;
+                padding: 4px 8px !important;
+                font-size: 12px !important;
+            }
+            
+            .person-name {
+                font-size: 12px !important;
+                font-weight: 600 !important;
+            }
+            
+            .person-assignment,
+            .person-role {
+                font-size: 11px !important;
+            }
+            
+            .date-header {
+                min-width: 35px !important;
+                width: 35px !important;
+                font-size: 11px !important;
+                padding: 2px 1px !important;
+            }
+            
+            .status-cell {
+                min-width: 35px !important;
+                width: 35px !important;
+                height: 32px !important;
+                font-size: 10px !important;
+            }
+            
+            /* Ajustar contenedor para evitar scroll horizontal */
+            .calendar-container {
+                overflow-x: auto !important;
+                max-width: 1366px !important;
+            }
+        }
+
+        /* Media query para laptops pequeños */
+        @media (max-width: 1299px) and (min-width: 1200px) {
+            .header-content {
+                padding: 0 10px;
+            }
+            
+            .header-controls {
                 gap: 12px;
+                flex-wrap: wrap;
             }
             
-            .nav-arrow {
-                padding: 6px 10px;
-                font-size: 14px;
+            .search-input {
+                width: 170px;
+                font-size: 13px;
             }
             
-            .current-year, .current-month {
-                min-width: 70px;
-                padding: 6px 12px;
-            }
-            
-            .today-btn {
-                padding: 6px 14px;
+            .filter-dropdown,
+            .cargo-filter-dropdown {
+                min-width: 100px;
                 font-size: 13px;
             }
         }
 
-        /* Header responsivo para pantallas pequeñas */
-        @media (max-width: 1365px) {
-            .header {
-                padding: 12px 15px;
-            }
-            
+        /* Media query para tablets y pantallas medianas */
+        @media (max-width: 1199px) and (min-width: 769px) {
             .header-content {
-                gap: 12px;
+                padding: 0 15px;
             }
             
-            .header-left {
-                gap: 12px;
+            .header-main {
+                gap: 8px;
             }
             
             .header-title {
-                font-size: 1.5em;
+                font-size: 1.4rem;
+                margin-bottom: 5px;
+            }
+            
+            .header-controls {
+                flex-direction: column;
+                gap: 10px;
+                align-items: center;
             }
             
             .search-section {
-                gap: 6px;
+                width: 100%;
+                justify-content: center;
             }
             
             .filters {
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
                 gap: 8px;
             }
             
-            .nav-arrow {
-                padding: 5px 8px;
-                font-size: 13px;
-            }
-            
-            .current-year, .current-month {
-                min-width: 60px;
-                padding: 5px 10px;
-                font-size: 13px;
-            }
-            
-            .today-btn {
-                padding: 5px 12px;
+            .filter-dropdown,
+            .cargo-filter-dropdown {
+                min-width: 110px;
                 font-size: 12px;
             }
-        }
-
-        /* Header responsivo para pantallas muy pequeñas */
-        @media (max-width: 1000px) {
-            .header-content {
-                gap: 10px;
+            
+            .search-input {
+                width: 220px;
+                font-size: 12px;
             }
             
-            .header-left {
-                gap: 10px;
-            }
-            
-            .search-section {
-                gap: 6px;
-            }
-            
-            .filters {
-                gap: 6px;
-            }
-            
-            .header-right {
-                gap: 8px;
-            }
-            
-            .date-navigation {
-                gap: 6px;
+            .search-label {
+                font-size: 0.8rem;
             }
         }
 
-        /* Header responsivo para pantallas extra pequeñas - reorganización completa */
-        @media (max-width: 800px) {
-            .header-content {
+        @media (max-width: 768px) {
+            .header-main {
                 flex-direction: column;
+                gap: 20px;
                 align-items: stretch;
-                gap: 15px;
             }
             
-            .header-left {
+            .header-controls {
                 flex-direction: column;
-                align-items: stretch;
                 gap: 15px;
             }
             
             .search-section {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 8px;
+                justify-content: center;
             }
             
             .filters {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 8px;
-            }
-            
-            .header-right {
                 justify-content: center;
+                flex-wrap: wrap;
                 gap: 10px;
             }
             
             .date-navigation {
-                justify-content: center;
+                flex-wrap: wrap;
                 gap: 10px;
+            }
+            
+            .main-content {
+                padding: 15px;
+            }
+            
+            .filter-dropdown,
+            .cargo-filter-dropdown {
+                min-width: 100px;
+                font-size: 12px;
+            }
+            
+            .search-input {
+                width: 200px;
             }
         }
     </style>
@@ -669,73 +1199,83 @@
         <!-- Header Section -->
         <div class="header">
             <div class="header-content">
-                <div class="header-left">
-                    <div class="header-title">Calendario de Planificación</div>
+                <div class="header-main">
+                    <h1 class="header-title">Calendario de Planificación</h1>
                     
+                    <div class="header-controls">
                     <div class="search-section">
                         <span class="search-label">Buscar:</span>
-                        <input type="text" class="search-input" placeholder="Nombre o RUT...">
+                        <input type="text" class="search-input" placeholder="Buscar por nombre o RUT...">
                     </div>
                     
                     <div class="filters">
-                        <select class="filter-dropdown">
-                            <option>Faena: Todas las faenas</option>
-                            <option>COLLAHUASI</option>
-                            <option>QUEBRADA BLANCA</option>
+                            <select class="filter-dropdown" id="faenaFilter">
+                                <option value="" selected>Faena: Todas</option>
+                                {% for faena in faenas %}
+                                <option value="{{ faena.nombre }}">{{ faena.nombre }}</option>
+                                {% endfor %}
+                                <option value="Sin asignar">Sin asignar</option>
+                                <option value="Múltiples">Múltiples</option>
                         </select>
                         
-                        <select class="filter-dropdown">
-                            <option>Cargos: Seleccionar cargos</option>
-                            <option>MECANICO</option>
-                            <option>OPERADOR HORQUILLA</option>
-                            <option>RIGGER</option>
-                        </select>
+                            <div class="cargo-filter-container">
+                                <div class="cargo-filter-dropdown" id="cargoFilterDropdown">
+                                    <div class="cargo-filter-selected" onclick="toggleCargoDropdown()">
+                                        <span id="cargoFilterText">Cargo: Todos</span>
+                                        <span class="dropdown-arrow">▼</span>
+                                    </div>
+                                    <div class="cargo-filter-options" id="cargoFilterOptions" style="display: none;">
+                                        <label class="cargo-option">
+                                            <input type="checkbox" value="" checked onchange="updateCargoFilter()"> Todos
+                                        </label>
+                                        {% for cargo in cargos %}
+                                        <label class="cargo-option">
+                                            <input type="checkbox" value="{{ cargo }}" onchange="updateCargoFilter()"> {{ cargo }}
+                                        </label>
+                                        {% endfor %}
+                                        <label class="cargo-option">
+                                            <input type="checkbox" value="Sin cargo" onchange="updateCargoFilter()"> Sin cargo
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                
+                        
                     </div>
+                </div>
                 </div>
                 
-                <div class="header-right">
-                    <div class="date-navigation">
-                        <button class="nav-arrow" onclick="previousYear()">‹‹</button>
-                        <div class="current-year" id="currentYear">2025</div>
-                        <button class="nav-arrow" onclick="nextYear()">››</button>
-                        
-                        <button class="today-btn" onclick="goToToday()">Ir a Hoy</button>
-                        
-                        <button class="nav-arrow" onclick="previousMonth()">‹</button>
-                        <div class="current-month" id="currentMonth">Agosto</div>
-                        <button class="nav-arrow" onclick="nextMonth()">›</button>
-                    </div>
-                </div>
+
             </div>
         </div>
 
         <!-- Status Legend -->
         <div class="status-legend">
-            <div class="legend-title">Estados:</div>
-            <div class="legend-items">
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #e9ecef;"></div>
-                    <span class="legend-text">Disp Disponible</span>
+            <div class="legend-content">
+                <div class="legend-title">Estados del Calendario:</div>
+                <div class="legend-items" id="statusLegend">
+                    <!-- Los estados se generarán dinámicamente desde el backend -->
                 </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #b3d9ff;"></div>
-                    <span class="legend-text">Faena En faena</span>
                 </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #ffeaa7;"></div>
-                    <span class="legend-text">Permiso Permiso</span>
                 </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #ff7675;"></div>
-                    <span class="legend-text">Licencia Licencia</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #fdcb6e;"></div>
-                    <span class="legend-text">Vac Vacaciones</span>
-                </div>
-                <div class="legend-item">
-                    <div class="legend-color" style="background: #55a3ff;"></div>
-                    <span class="legend-text">Descanso Descanso</span>
+
+        <!-- Calendar Navigation -->
+        <div class="calendar-navigation">
+            <div class="nav-content">
+                <div class="date-navigation">
+                    <button class="nav-btn" onclick="previousYear()">‹‹</button>
+                    
+                    <div class="current-date-display" id="currentYear">2025</div>
+                    
+                    <button class="nav-btn" onclick="nextYear()">››</button>
+                    
+                    <button class="today-btn" onclick="goToToday()">Ir a Hoy</button>
+                    
+                    <button class="nav-btn" onclick="previousMonth()">‹</button>
+                    
+                    <div class="current-date-display" id="currentMonth">Agosto</div>
+                    
+                    <button class="nav-btn" onclick="nextMonth()">›</button>
                 </div>
             </div>
         </div>
@@ -751,48 +1291,174 @@
         </div>
     </div>
 
+    <!-- Modal para información de estado -->
+    <div id="estadoModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Información del Estado</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info">
+                    <div class="info-section">
+                        <h4>Personal</h4>
+                        <p id="modalPersonal">-</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>Fecha</h4>
+                        <p id="modalFecha">-</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>Estado</h4>
+                        <p id="modalEstado">-</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>Faena (esta fecha)</h4>
+                        <p id="modalFaena">-</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>Cargo</h4>
+                        <p id="modalCargo">-</p>
+                    </div>
+                    <div class="info-section" id="modalDetalleSection" style="display: none;">
+                        <h4>Detalle de Asignación</h4>
+                        <p id="modalDetalle">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para información personal -->
+    <div id="personalInfoModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="personalInfoTitle">Información Personal</h3>
+                <button class="modal-close" onclick="closePersonalInfoModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="modal-info">
+                    <div class="info-section">
+                        <h4>Nombre Completo</h4>
+                        <p id="personalNombre">-</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>RUT</h4>
+                        <p id="personalRut">-</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>Fecha de Nacimiento</h4>
+                        <p id="personalFechaNac">-</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>Correo</h4>
+                        <p id="personalCorreo">-</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>Dirección</h4>
+                        <p id="personalDireccion">-</p>
+                    </div>
+                    <div class="info-section">
+                        <h4>Cargo Actual</h4>
+                        <p id="personalCargo">-</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para gestión de faenas -->
+    <div id="faenaManagerModal" class="modal-overlay" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="faenaManagerTitle">Gestión de Asignación de Faena</h3>
+                <button class="modal-close" onclick="closeFaenaManagerModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="faenaForm">
+                    <input type="hidden" id="personalId" name="personal_id">
+                    <input type="hidden" id="asignacionId" name="asignacion_id">
+                    
+                    <div class="form-section">
+                        <h4>Personal</h4>
+                        <p id="faenaPersonalNombre" class="form-readonly">-</p>
+                    </div>
+                    
+                    <div class="form-section" id="asignacionesExistentes" style="display: none;">
+                        <h4>Asignaciones Existentes</h4>
+                        <div id="listaAsignaciones" class="asignaciones-lista">
+                            <!-- Se llenarán dinámicamente -->
+                        </div>
+                        <button type="button" id="btnNuevaAsignacion" onclick="modoCrearAsignacion(event)">+ Nueva Asignación</button>
+                    </div>
+                    
+                    <div class="form-section" id="faenaSection" style="display: block;">
+                        <label for="faenaSelect">Faena</label>
+                        <select id="faenaSelect" name="faena_id" required>
+                            <option value="">Seleccionar faena...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-section" id="turnoSection" style="display: block;">
+                        <label for="turnoSelect">Turno</label>
+                        <select id="turnoSelect" name="turno_id" required>
+                            <option value="">Seleccionar turno...</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-section" id="fechaInicioSection" style="display: block;">
+                        <label for="fechaInicio">Fecha de Inicio</label>
+                        <input type="date" id="fechaInicio" name="fecha_inicio" required>
+                    </div>
+                    
+                    <div class="form-section" id="fechaFinSection" style="display: block;">
+                        <label for="fechaFin">Fecha de Fin (opcional)</label>
+                        <input type="date" id="fechaFin" name="fecha_fin">
+                    </div>
+                    
+                    <div class="form-section" id="bloqueInicioSection" style="display: block;">
+                        <label for="bloqueInicioSelect">Bloque Inicio</label>
+                        <select id="bloqueInicioSelect" name="bloque_inicio_id">
+                            <option value="">Seleccionar bloque de inicio...</option>
+                        </select>
+                        <small style="color: #666; margin-top: 5px; display: block;">Bloque del turno desde el cual arranca el ciclo para esta persona</small>
+                    </div>
+                    
+                    <div class="form-section" id="observacionesSection" style="display: block;">
+                        <label for="observaciones">Observaciones</label>
+                        <textarea id="observaciones" name="observaciones" rows="3" placeholder="Observaciones adicionales..."></textarea>
+                    </div>
+                    
+                    <div class="form-section" id="activoSection" style="display: block;">
+                        <label>
+                            <input type="checkbox" id="activo" name="activo" checked>
+                            Activo
+                        </label>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <button type="button" id="btnGuardar" onclick="guardarAsignacion(event)">Guardar</button>
+                        <button type="button" id="btnEliminar" onclick="eliminarAsignacion(event)" style="display: none;">Eliminar</button>
+                        <button type="button" onclick="closeFaenaManagerModal()">Cancelar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
-        let currentDate = new Date();
+        // Datos del backend de Django
+        const calendarioData = JSON.parse('{{ calendario|escapejs }}');
+        const currentYear = parseInt("{{ current_year }}");
+        const currentMonth = parseInt("{{ current_month }}");
+        const currentMonthName = "{{ current_month_name|escapejs }}";
+        const faenas = calendarioData.faenas || [];
+        const cargos = calendarioData.cargos || [];
+        const filtros = JSON.parse('{{ filtros|safe }}');
+        const mesAnterior = JSON.parse('{{ mes_anterior|safe }}');
+        const mesSiguiente = JSON.parse('{{ mes_siguiente|safe }}');
         
-        // Personal data (empty schedules for now)
-        const personal = [
-            {
-                name: 'KEVIN RIOS GALLARDO',
-                assignment: 'SIN ASIGNAR',
-                role: 'MECANICO',
-                schedule: {}
-            },
-            {
-                name: 'JORGE CUBILLOS DIAZ',
-                assignment: 'FAENA: COLLAHUASI',
-                role: 'OPERADOR HORQUILLA',
-                schedule: {}
-            },
-            {
-                name: 'EMILIO ROJAS DIAZ',
-                assignment: 'FAENA: QUEBRADA BLANCA',
-                role: 'OPERADOR HORQUILLA',
-                schedule: {}
-            },
-            {
-                name: 'GUILLERMO DIAZ FLORES',
-                assignment: 'FAENA: QUEBRADA BLANCA',
-                role: 'RIGGER',
-                schedule: {}
-            },
-            {
-                name: 'FRANCISCO ROMAN FUENTES',
-                assignment: 'SIN ASIGNAR',
-                role: 'RIGGER',
-                schedule: {}
-            },
-            {
-                name: 'CARLOS RAMIREZ PEREIRA',
-                assignment: 'SIN ASIGNAR',
-                role: 'RIGGER',
-                schedule: {}
-            }
-        ];
+        let currentDate = new Date(currentYear, currentMonth - 1, 1);
 
         // Month names in Spanish
         const monthNames = [
@@ -814,6 +1480,40 @@
             // Generate calendar
             generateCalendarTable(year, month);
         }
+        
+                 function generateStatusLegend() {
+             const legendContainer = document.getElementById('statusLegend');
+             legendContainer.innerHTML = '';
+             
+             // Mostrar TODOS los estados del modelo, no solo los usados
+             if (calendarioData.todos_estados_disponibles && calendarioData.todos_estados_disponibles.length > 0) {
+                 // Ordenar por prioridad (mayor a menor)
+                 const estados = calendarioData.todos_estados_disponibles.sort((a, b) => b.prioridad - a.prioridad);
+                 
+                              estados.forEach(estado => {
+                 const legendItem = document.createElement('div');
+                 legendItem.className = 'legend-item';
+                 
+                 // Mostrar nombre corto si existe, sino solo el nombre completo
+                 const displayText = estado.nombre_corto && estado.nombre_corto !== estado.nombre 
+                     ? `${estado.nombre} (${estado.nombre_corto})`
+                     : estado.nombre;
+                 
+                 legendItem.innerHTML = `
+                     <div class="legend-color" style="background: ${estado.background_color}; border: 1px solid ${estado.color || '#dee2e6'};"></div>
+                     <span>${displayText}</span>
+                 `;
+                 legendContainer.appendChild(legendItem);
+             });
+                 
+                 console.log('Estados mostrados en leyenda:', estados.length);
+                 console.log('Todos los estados del modelo:', estados);
+             } else {
+                 console.log('No hay estados disponibles desde el backend');
+                 // Fallback: mostrar mensaje de que no hay estados
+                 legendContainer.innerHTML = '<p style="color: #666; font-style: italic;">No hay estados configurados</p>';
+             }
+        }
 
         function generateCalendarTable(year, month) {
             const table = document.getElementById('calendarTable');
@@ -828,14 +1528,9 @@
             // Create header row with PERSONAL column and date headers
             const headerRow = table.insertRow();
             
-            // PERSONAL column header (empty for alignment)
+            // PERSONAL column header
             const personalHeader = headerRow.insertCell();
             personalHeader.className = 'personal-header-cell';
-            personalHeader.style.width = '320px';
-            personalHeader.style.background = '#f8f9fa';
-            personalHeader.style.position = 'sticky';
-            personalHeader.style.left = '0';
-            personalHeader.style.zIndex = '10';
             personalHeader.innerHTML = '<strong>PERSONAL</strong>';
             
             // Date headers
@@ -859,25 +1554,40 @@
                 }
             }
 
-            // Create rows for each person
-            personal.forEach(person => {
+            // Create rows for each person using real data
+            calendarioData.personal.forEach(person => {
                 const personRow = table.insertRow();
                 
                 // Person info cell (left side)
                 const personCell = personRow.insertCell();
                 personCell.className = 'person-info-cell';
-                personCell.style.width = '320px';
-                personCell.style.background = '#f8f9fa';
-                personCell.style.textAlign = 'left';
-                personCell.style.padding = '8px 15px';
-                personCell.style.borderRight = '1px solid #e9ecef';
-                personCell.style.position = 'sticky';
-                personCell.style.left = '0';
-                personCell.style.zIndex = '5';
+                
+                // Get person info from Django data
+                const cargo = person.infolaboral_set && person.infolaboral_set.length > 0 ? person.infolaboral_set[0].cargo_id.cargo : 'Sin cargo';
+                
+                // Manejar múltiples faenas
+                let faenaTexto;
+                if (person.asignaciones_faena && person.asignaciones_faena.length > 0) {
+                    if (person.asignaciones_faena.length === 1) {
+                        faenaTexto = person.asignaciones_faena[0].faena.nombre;
+                    } else {
+                        faenaTexto = 'Múltiples';
+                    }
+                } else {
+                    faenaTexto = 'Sin asignar';
+                }
+                
                 personCell.innerHTML = `
-                    <div class="person-name" style="font-weight: 600; color: #333; margin-bottom: 2px; font-size: 12px;">${person.name}</div>
-                    <div class="person-assignment" style="font-size: 10px; color: #666; margin-bottom: 2px;">${person.assignment}</div>
-                    <div class="person-role" style="font-size: 9px; color: #888; font-style: italic;">${person.role}</div>
+                    <div class="person-info-row">
+                        <div class="person-details">
+                            <div class="person-name">${person.nombre} ${person.apepat} ${person.apemat} <i class="fas fa-info-circle" onclick="showPersonalInfoModal(${person.personal_id})" title="Ver información personal"></i></div>
+                            <div class="person-assignment">FAENA: ${faenaTexto}</div>
+                            <div class="person-role">${cargo}</div>
+                        </div>
+                        <div class="person-actions">
+                            <button class="btn-faena-manager" onclick="showFaenaManagerModal(${person.personal_id})" title="Gestionar asignación de faena"><i class="fas fa-calendar-check"></i></button>
+                        </div>
+                    </div>
                 `;
                 
                 // Schedule cells for each day (right side)
@@ -890,46 +1600,1006 @@
                         scheduleCell.classList.add('today-column');
                     }
                     
-                    // Empty cell - will be populated from database later
+                    // Get real state from Django data
+                    const estado = calendarioData.estados[person.personal_id] && calendarioData.estados[person.personal_id][day];
+                    if (estado) {
+                        if (estado.multiple && estado.estados) {
+                            // Múltiples estados con la misma prioridad
+                                             const estadosHtml = estado.estados.map(e => 
+                     `<span class="multi-estado" style="background: ${e.background_color}; color: ${e.color};">${e.nombre_corto}</span>`
+                 ).join('');
+                                             scheduleCell.innerHTML = estadosHtml;
+                 scheduleCell.style.backgroundColor = '#f8f9fa';
+                 scheduleCell.style.color = '#495057';
+                 scheduleCell.title = `Múltiples estados: ${estado.estados.map(e => e.nombre).join(', ')}`;
+                 
+                 // Agregar evento click para modal (estados múltiples)
+                 scheduleCell.style.cursor = 'pointer';
+                 scheduleCell.addEventListener('click', function(e) {
+                     e.stopPropagation();
+                     const fecha = new Date(currentYear, currentMonth - 1, day);
+                     showModal(person, fecha, estado);
+                 });
+                        } else {
+                            // Estado único
+                                            scheduleCell.innerHTML = estado.nombre_corto;
+                scheduleCell.style.backgroundColor = estado.background_color;
+                scheduleCell.style.color = estado.color;
+                scheduleCell.title = `${estado.nombre} - Prioridad: ${estado.prioridad}`;
+                
+                // Agregar evento click para modal (excepto estado predeterminado)
+                if (!estado.es_predeterminado) {
+                    scheduleCell.style.cursor = 'pointer';
+                    scheduleCell.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const fecha = new Date(currentYear, currentMonth - 1, day);
+                        showModal(person, fecha, estado);
+                    });
+                }
+                        }
+                    } else {
                     scheduleCell.innerHTML = '';
+                    }
                     
                     // Add click event for future functionality
                     scheduleCell.addEventListener('click', () => {
                         // Future: Add status editing functionality
-                        console.log(`Clicked on ${person.name} - Day ${day}`);
+                        console.log(`Clicked on ${person.nombre} - Day ${day}`);
                     });
                 }
             });
+            
+            // Generar leyenda de estados
+            generateStatusLegend();
         }
 
         function previousMonth() {
             currentDate.setMonth(currentDate.getMonth() - 1);
-            updateCalendar();
+            redirectToCalendar();
         }
 
         function nextMonth() {
             currentDate.setMonth(currentDate.getMonth() + 1);
-            updateCalendar();
+            redirectToCalendar();
         }
 
         function previousYear() {
             currentDate.setFullYear(currentDate.getFullYear() - 1);
-            updateCalendar();
+            redirectToCalendar();
         }
 
         function nextYear() {
             currentDate.setFullYear(currentDate.getFullYear() + 1);
-            updateCalendar();
+            redirectToCalendar();
         }
 
         function goToToday() {
+            // Efecto visual del botón
+            const todayBtn = document.querySelector('.today-btn');
+            todayBtn.style.transform = 'scale(0.95)';
+            todayBtn.style.transition = 'all 0.2s ease';
+            
+            // Efecto de loading
+            const originalText = todayBtn.textContent;
+            todayBtn.textContent = '⏳ Cargando...';
+            todayBtn.disabled = true;
+            
+            // Efecto de fade en el calendario
+            const calendar = document.querySelector('.calendar-table');
+            calendar.style.opacity = '0.6';
+            calendar.style.transition = 'opacity 0.3s ease';
+            
+            // Esperar un poco para mostrar el efecto, luego navegar
+            setTimeout(() => {
             currentDate = new Date();
-            updateCalendar();
+                redirectToCalendar();
+            }, 300);
+        }
+
+        function redirectToCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth() + 1;
+            const url = new URL(window.location.href);
+            url.searchParams.set('year', year);
+            url.searchParams.set('month', month);
+            window.location.href = url.toString();
+        }
+
+        // Funciones del modal
+        function showModal(personal, fecha, estado) {
+            // No mostrar modal para estado predeterminado
+            if (estado && estado.es_predeterminado) {
+                return;
+            }
+            
+            document.getElementById('modalPersonal').textContent = `${personal.nombre} ${personal.apepat} ${personal.apemat}`;
+            document.getElementById('modalFecha').textContent = fecha.toLocaleDateString('es-ES', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            let detalleInfo = '';
+            
+            if (estado && estado.multiple && estado.estados) {
+                // Múltiples estados
+                document.getElementById('modalEstado').textContent = estado.estados.map(e => e.nombre).join(' + ');
+                
+                // Mostrar detalles de fuentes múltiples
+                if (estado.detalles_fuentes && estado.detalles_fuentes.length > 0) {
+                    detalleInfo = estado.detalles_fuentes.map(detalle => {
+                        return formatearDetalleFuente(detalle);
+                    }).join('<hr style="margin: 10px 0; border: 1px solid #ecf0f1;">');
+                }
+            } else if (estado) {
+                // Estado único
+                document.getElementById('modalEstado').textContent = estado.nombre || 'Sin estado';
+                
+                // Mostrar detalle de fuente única
+                if (estado.detalle_fuente) {
+                    detalleInfo = formatearDetalleFuente(estado.detalle_fuente);
+                }
+            } else {
+                document.getElementById('modalEstado').textContent = 'Sin estado';
+            }
+            
+            // Información del personal - mostrar faena según el estado específico
+            let faenaEspecifica = 'Sin asignar';
+            
+            console.log('Estado para modal:', estado);
+            console.log('Detalles fuentes:', estado?.detalles_fuentes);
+            console.log('Detalle fuente único:', estado?.detalle_fuente);
+            
+            if (estado && estado.multiple && estado.detalles_fuentes) {
+                // Si hay múltiples estados, buscar SOLO el que corresponde al estado de turno/trabajo
+                console.log('Buscando asignación de faena en múltiples estados...');
+                const faenaDetalle = estado.detalles_fuentes.find(detalle => 
+                    detalle.detalles && detalle.detalles.tipo === 'Asignación de Faena');
+                console.log('Faena detalle encontrado:', faenaDetalle);
+                
+                if (faenaDetalle) {
+                    faenaEspecifica = faenaDetalle.detalles.faena;
+                    console.log('Faena específica (múltiple):', faenaEspecifica);
+                } else {
+                    // Si no hay asignación de faena en este día específico, no mostrar faena
+                    faenaEspecifica = 'No aplica (permiso/licencia)';
+                    console.log('No hay asignación de faena en este día');
+                }
+            } else if (estado && estado.detalle_fuente) {
+                // Estado único - verificar si es una asignación de faena
+                console.log('Estado único, detalle_fuente completo:', estado.detalle_fuente);
+                
+                if (estado.detalle_fuente.detalles) {
+                    console.log('Estado único, tipo:', estado.detalle_fuente.detalles.tipo);
+                    if (estado.detalle_fuente.detalles.tipo === 'Asignación de Faena' && estado.detalle_fuente.detalles.faena) {
+                        faenaEspecifica = estado.detalle_fuente.detalles.faena;
+                        console.log('Faena específica (único):', faenaEspecifica);
+                    } else {
+                        // Si es permiso, licencia, etc., no mostrar faena
+                        faenaEspecifica = 'No aplica (permiso/licencia)';
+                        console.log('Estado no es asignación de faena:', estado.detalle_fuente.detalles.tipo);
+                    }
+                } else {
+                    console.log('Estado sin detalles:', estado.detalle_fuente);
+                    faenaEspecifica = 'Sin información específica';
+                }
+            } else {
+                // Sin estado específico - fallback general pero más específico
+                console.log('Sin detalle de fuente, usando fallback...');
+                console.log('Personal asignaciones:', personal.asignaciones_faena);
+                
+                if (personal.asignaciones_faena && personal.asignaciones_faena.length > 0) {
+                    if (personal.asignaciones_faena.length === 1) {
+                        faenaEspecifica = personal.asignaciones_faena[0].faena.nombre;
+                        console.log('Fallback: faena única:', faenaEspecifica);
+                    } else {
+                        // Para múltiples asignaciones, mostrar la que está activa en esta fecha
+                        console.log('Fecha clickeada:', fecha);
+                        const asignacionParaFecha = personal.asignaciones_faena.find(af => {
+                            const fechaInicio = new Date(af.fecha_inicio);
+                            const fechaFin = af.fecha_fin ? new Date(af.fecha_fin) : null;
+                            console.log('Comparando con asignación:', af.faena.nombre, 'del', fechaInicio, 'al', fechaFin);
+                            return fechaInicio <= fecha && (!fechaFin || fechaFin >= fecha);
+                        });
+                        
+                        if (asignacionParaFecha) {
+                            faenaEspecifica = asignacionParaFecha.faena.nombre;
+                            console.log('Fallback: faena para fecha específica:', faenaEspecifica);
+                        } else {
+                            faenaEspecifica = 'Sin asignación para esta fecha';
+                            console.log('Fallback: sin asignación para esta fecha');
+                        }
+                    }
+                } else {
+                    faenaEspecifica = 'Sin asignar';
+                    console.log('Fallback: sin asignaciones');
+                }
+            }
+            
+            document.getElementById('modalFaena').textContent = faenaEspecifica;
+            
+            const cargo = personal.infolaboral_set && personal.infolaboral_set.length > 0 
+                ? personal.infolaboral_set[0].cargo_id.cargo 
+                : 'Sin cargo';
+            document.getElementById('modalCargo').textContent = cargo;
+            
+            // Mostrar detalles de la asignación si están disponibles
+            if (detalleInfo) {
+                document.getElementById('modalDetalle').innerHTML = detalleInfo;
+                document.getElementById('modalDetalleSection').style.display = 'block';
+            } else {
+                document.getElementById('modalDetalleSection').style.display = 'none';
+            }
+            
+            // Mostrar modal
+            document.getElementById('estadoModal').style.display = 'flex';
+        }
+
+        function formatearDetalleFuente(detalle) {
+            if (!detalle) return '';
+            
+            let info = '';
+            
+            if (detalle.detalles) {
+                if (detalle.detalles.tipo === 'Licencia Médica') {
+                    info = `<strong>${detalle.detalles.tipo}</strong><br>`;
+                    info += `Motivo: ${detalle.detalles.motivo || 'No especificado'}<br>`;
+                    if (detalle.fecha_inicio && detalle.fecha_fin) {
+                        info += `Período: ${new Date(detalle.fecha_inicio).toLocaleDateString('es-ES')} - ${new Date(detalle.fecha_fin).toLocaleDateString('es-ES')}`;
+                    }
+                } else if (detalle.detalles.tipo === 'Ausentismo') {
+                    info = `<strong>${detalle.detalles.tipo}</strong><br>`;
+                    info += `Motivo: ${detalle.detalles.motivo || 'No especificado'}<br>`;
+                    if (detalle.fecha_inicio && detalle.fecha_fin) {
+                        info += `Período: ${new Date(detalle.fecha_inicio).toLocaleDateString('es-ES')} - ${new Date(detalle.fecha_fin).toLocaleDateString('es-ES')}`;
+                    }
+                } else if (detalle.detalles.tipo === 'Asignación de Faena') {
+                    info = `<strong>${detalle.detalles.tipo}</strong><br>`;
+                    info += `Faena: ${detalle.detalles.faena}<br>`;
+                    info += `Turno: ${detalle.detalles.turno}<br>`;
+                    if (detalle.fecha_inicio) {
+                        const fechaFin = detalle.fecha_fin ? new Date(detalle.fecha_fin).toLocaleDateString('es-ES') : 'Indefinido';
+                        info += `Período: ${new Date(detalle.fecha_inicio).toLocaleDateString('es-ES')} - ${fechaFin}`;
+                    }
+                }
+            }
+            
+            return info;
+        }
+
+        function closeModal() {
+            document.getElementById('estadoModal').style.display = 'none';
+        }
+
+        // Cerrar modal al hacer click fuera
+        document.addEventListener('click', function(event) {
+            const modal = document.getElementById('estadoModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        });
+
+        // Cerrar modal con ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // ====== FUNCIONES PARA MODAL DE INFORMACIÓN PERSONAL ======
+        function showPersonalInfoModal(personalId) {
+            console.log('Abriendo modal personal para ID:', personalId);
+            console.log('calendarioData:', calendarioData);
+            
+            const personal = calendarioData.personal.find(p => p.personal_id === personalId);
+            console.log('Personal encontrado:', personal);
+            
+            if (!personal) {
+                alert('No se pudo cargar la información del personal');
+                return;
+            }
+
+            // Poblar datos en el modal
+            document.getElementById('personalNombre').textContent = `${personal.nombre} ${personal.apepat} ${personal.apemat}`;
+            
+            // RUT completo con dígito verificador
+            const rutCompleto = personal.rut && personal.dvrut ? 
+                `${personal.rut}-${personal.dvrut}` : 'No especificado';
+            document.getElementById('personalRut').textContent = rutCompleto;
+            
+            // Fecha de nacimiento formateada
+            document.getElementById('personalFechaNac').textContent = personal.fecha_nac ? 
+                formatearFecha(personal.fecha_nac) : 'No especificada';
+            
+            document.getElementById('personalCorreo').textContent = personal.correo || 'No especificado';
+            document.getElementById('personalDireccion').textContent = personal.direccion || 'No especificada';
+            
+            // Cargo actual
+            const cargo = personal.infolaboral_set && personal.infolaboral_set.length > 0 ? 
+                personal.infolaboral_set[0].cargo_id.cargo : 'Sin cargo';
+            document.getElementById('personalCargo').textContent = cargo;
+
+            // Mostrar modal
+            document.getElementById('personalInfoModal').style.display = 'flex';
+        }
+
+        function closePersonalInfoModal() {
+            document.getElementById('personalInfoModal').style.display = 'none';
+        }
+
+        // ====== FUNCIONES PARA MODAL DE GESTIÓN DE FAENAS ======
+        function showFaenaManagerModal(personalId) {
+            console.log('Abriendo modal faenas para ID:', personalId);
+            console.log('calendarioData completo:', calendarioData);
+            
+            const personal = calendarioData.personal.find(p => p.personal_id === personalId);
+            console.log('Personal encontrado para faenas:', personal);
+            
+            if (!personal) {
+                alert('No se pudo cargar la información del personal');
+                return;
+            }
+
+            // Guardar ID del personal
+            document.getElementById('personalId').value = personalId;
+            document.getElementById('faenaPersonalNombre').textContent = `${personal.nombre} ${personal.apepat} ${personal.apemat}`;
+
+            // Obtener todas las asignaciones activas
+            const asignacionesActivas = personal.asignaciones_faena && personal.asignaciones_faena.length > 0 ? 
+                personal.asignaciones_faena : [];
+            
+            console.log('Personal:', personal);
+            console.log('Asignaciones activas:', asignacionesActivas);
+
+            // Cargar faenas y turnos disponibles
+            cargarFaenasYTurnos().then(() => {
+                if (asignacionesActivas.length > 0) {
+                    // Mostrar lista de asignaciones existentes
+                    mostrarAsignacionesExistentes(asignacionesActivas);
+                    // Comenzar en modo lista
+                    modoListaAsignaciones();
+                } else {
+                    // No hay asignaciones, ir directo a crear nueva
+                    modoCrearAsignacion();
+                }
+            });
+
+            // Mostrar modal
+            document.getElementById('faenaManagerModal').style.display = 'flex';
+        }
+
+        function mostrarAsignacionesExistentes(asignaciones) {
+            const listaContainer = document.getElementById('listaAsignaciones');
+            listaContainer.innerHTML = '';
+
+            console.log('Asignaciones recibidas:', asignaciones);
+
+            asignaciones.forEach(asignacion => {
+                console.log('Procesando asignación:', asignacion);
+                const asignacionDiv = document.createElement('div');
+                asignacionDiv.className = 'asignacion-item';
+                
+                const fechaInicio = formatearFecha(asignacion.fecha_inicio);
+                const fechaFin = asignacion.fecha_fin ? formatearFecha(asignacion.fecha_fin) : 'Sin fecha fin';
+                
+                asignacionDiv.innerHTML = `
+                    <div class="asignacion-info">
+                        <h5>${asignacion.faena.nombre}</h5>
+                        <p>Desde: ${fechaInicio} hasta: ${fechaFin}</p>
+                    </div>
+                    <div class="asignacion-actions">
+                        <button type="button" class="btn-asignacion btn-editar" onclick="editarAsignacion(${asignacion.id}, event)">Editar</button>
+                        <button type="button" class="btn-asignacion btn-eliminar-asig" onclick="eliminarAsignacionDirecta(${asignacion.id}, event)">Eliminar</button>
+                    </div>
+                `;
+                
+                listaContainer.appendChild(asignacionDiv);
+            });
+        }
+
+        function modoListaAsignaciones() {
+            // Mostrar lista de asignaciones
+            document.getElementById('asignacionesExistentes').style.display = 'block';
+            // Ocultar formulario
+            document.getElementById('faenaSection').style.display = 'none';
+            document.getElementById('turnoSection').style.display = 'none';
+            document.getElementById('fechaInicioSection').style.display = 'none';
+            document.getElementById('fechaFinSection').style.display = 'none';
+            document.getElementById('bloqueInicioSection').style.display = 'none';
+            document.getElementById('observacionesSection').style.display = 'none';
+            document.getElementById('activoSection').style.display = 'none';
+            document.querySelector('.form-actions').style.display = 'none';
+        }
+
+        function modoCrearAsignacion(event) {
+            if (event) event.preventDefault();
+            
+            // Ocultar lista
+            document.getElementById('asignacionesExistentes').style.display = 'none';
+            // Mostrar formulario
+            document.getElementById('faenaSection').style.display = 'block';
+            document.getElementById('turnoSection').style.display = 'block';
+            document.getElementById('fechaInicioSection').style.display = 'block';
+            document.getElementById('fechaFinSection').style.display = 'block';
+            document.getElementById('bloqueInicioSection').style.display = 'block';
+            document.getElementById('observacionesSection').style.display = 'block';
+            document.getElementById('activoSection').style.display = 'block';
+            document.querySelector('.form-actions').style.display = 'flex';
+            
+            // Limpiar formulario para nueva asignación
+            document.getElementById('asignacionId').value = '';
+            document.getElementById('faenaForm').reset();
+            document.getElementById('personalId').value = document.getElementById('personalId').value; // Mantener personal ID
+            document.getElementById('activo').checked = true;
+            document.getElementById('btnEliminar').style.display = 'none';
+            document.getElementById('btnGuardar').textContent = 'Guardar';
+        }
+
+        function editarAsignacion(asignacionId, event) {
+            if (event) event.preventDefault();
+            
+            // Encontrar la asignación por ID
+            const personal = calendarioData.personal.find(p => p.personal_id == document.getElementById('personalId').value);
+            const asignacion = personal.asignaciones_faena.find(a => a.id == asignacionId);
+            
+            if (!asignacion) {
+                alert('Asignación no encontrada');
+                return;
+            }
+
+            // Cambiar a modo formulario
+            modoCrearAsignacion();
+            
+            // Precargar datos de la asignación
+            document.getElementById('asignacionId').value = asignacion.id;
+            document.getElementById('faenaSelect').value = asignacion.faena.id;
+            document.getElementById('turnoSelect').value = asignacion.turno_id;
+            document.getElementById('fechaInicio').value = asignacion.fecha_inicio;
+            document.getElementById('fechaFin').value = asignacion.fecha_fin || '';
+            document.getElementById('observaciones').value = asignacion.observaciones || '';
+            document.getElementById('activo').checked = asignacion.activo !== false;
+            
+            // Cargar bloques del turno y seleccionar el correcto
+            if (asignacion.turno_id) {
+                console.log('Cargando bloques para edición, turno_id:', asignacion.turno_id);
+                cargarBloquesTurno(asignacion.turno_id).then(() => {
+                    if (asignacion.bloque_inicio_id) {
+                        console.log('Seleccionando bloque_inicio_id:', asignacion.bloque_inicio_id);
+                        document.getElementById('bloqueInicioSelect').value = asignacion.bloque_inicio_id;
+                    }
+                });
+            }
+            
+            document.getElementById('btnEliminar').style.display = 'inline-block';
+            document.getElementById('btnGuardar').textContent = 'Actualizar';
+        }
+
+        function eliminarAsignacionDirecta(asignacionId, event) {
+            if (event) event.preventDefault();
+            
+            if (!confirm('¿Estás seguro de que quieres eliminar esta asignación?')) {
+                return;
+            }
+
+            fetch('/calendario/api/eliminar-asignacion/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ asignacion_id: asignacionId })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(result.message || 'Asignación eliminada correctamente');
+                    closeFaenaManagerModal();
+                    location.reload();
+                } else {
+                    alert(result.error || 'Error al eliminar la asignación');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al comunicarse con el servidor');
+            });
+        }
+
+        function closeFaenaManagerModal() {
+            document.getElementById('faenaManagerModal').style.display = 'none';
+        }
+
+        // Handler para el cambio de turno
+        function turnoChangeHandler() {
+            console.log('Turno cambiado a:', this.value);
+            cargarBloquesTurno(this.value);
+        }
+
+        // Función para formatear fechas en formato dd/mm/yyyy
+        function formatearFecha(fechaString) {
+            if (!fechaString) return 'Sin fecha';
+            
+            console.log('Fecha recibida:', fechaString);
+            
+            let fecha;
+            
+            // Si ya tiene tiempo, usar como está
+            if (fechaString.includes('T')) {
+                fecha = new Date(fechaString);
+            } else {
+                // Si es solo fecha (YYYY-MM-DD), agregar tiempo local para evitar problemas de zona horaria
+                fecha = new Date(fechaString + 'T00:00:00');
+            }
+            
+            console.log('Fecha parseada:', fecha);
+            
+            const dia = fecha.getDate().toString().padStart(2, '0');
+            const mes = (fecha.getMonth() + 1).toString().padStart(2, '0');
+            const año = fecha.getFullYear();
+            
+            const fechaFormateada = `${dia}/${mes}/${año}`;
+            console.log('Fecha formateada:', fechaFormateada);
+            
+            return fechaFormateada;
+        }
+
+        function cargarFaenasYTurnos() {
+            return new Promise((resolve) => {
+                // Cargar faenas
+                const faenaSelect = document.getElementById('faenaSelect');
+                faenaSelect.innerHTML = '<option value="">Seleccionar faena...</option>';
+                
+                if (calendarioData.faenas) {
+                    calendarioData.faenas.forEach(faena => {
+                        const option = document.createElement('option');
+                        option.value = faena.id;
+                        option.textContent = faena.nombre;
+                        faenaSelect.appendChild(option);
+                    });
+                }
+
+                // Cargar turnos
+                const turnoSelect = document.getElementById('turnoSelect');
+                turnoSelect.innerHTML = '<option value="">Seleccionar turno...</option>';
+                
+                if (calendarioData.turnos) {
+                    calendarioData.turnos.forEach(turno => {
+                        const option = document.createElement('option');
+                        option.value = turno.id;
+                        option.textContent = turno.nombre;
+                        turnoSelect.appendChild(option);
+                    });
+                }
+
+                // Remover listeners previos y agregar nuevo listener para cargar bloques
+                turnoSelect.removeEventListener('change', turnoChangeHandler);
+                turnoSelect.addEventListener('change', turnoChangeHandler);
+                
+                // Resolver la promesa
+                resolve();
+            });
+        }
+
+        function cargarBloquesTurno(turnoId) {
+            const bloqueSelect = document.getElementById('bloqueInicioSelect');
+            bloqueSelect.innerHTML = '<option value="">Seleccionar bloque de inicio...</option>';
+            
+            if (!turnoId) return Promise.resolve();
+
+            console.log('Cargando bloques para turno ID:', turnoId);
+            console.log('Turnos disponibles:', calendarioData.turnos);
+
+            // Buscar el turno en los datos locales
+            const turno = calendarioData.turnos.find(t => t.id == turnoId);
+            
+            if (turno && turno.bloques) {
+                console.log('Bloques encontrados:', turno.bloques);
+                turno.bloques.forEach(bloque => {
+                    const option = document.createElement('option');
+                    option.value = bloque.id;
+                    option.textContent = `${bloque.orden}. ${bloque.estado.nombre} (${bloque.duracion_dias} días)`;
+                    bloqueSelect.appendChild(option);
+                });
+            } else {
+                console.log('No se encontraron bloques para el turno:', turnoId);
+            }
+            
+            return Promise.resolve();
+        }
+
+        function guardarAsignacion(event) {
+            if (event) event.preventDefault();
+            
+            const formData = new FormData(document.getElementById('faenaForm'));
+            const data = Object.fromEntries(formData.entries());
+            
+            // Manejar checkbox
+            data.activo = document.getElementById('activo').checked;
+            
+            console.log('Datos a enviar:', data);
+            
+            // Validaciones básicas
+            if (!data.faena_id || !data.turno_id || !data.fecha_inicio) {
+                alert('Por favor completa todos los campos requeridos');
+                return;
+            }
+
+            // Enviar datos al servidor
+            const url = data.asignacion_id ? '/calendario/api/actualizar-asignacion/' : '/calendario/api/crear-asignacion/';
+            
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(result.message || 'Asignación guardada correctamente');
+                    closeFaenaManagerModal();
+                    location.reload(); // Recargar para ver los cambios
+                } else {
+                    alert(result.error || 'Error al guardar la asignación');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al comunicarse con el servidor');
+            });
+        }
+
+        function eliminarAsignacion(event) {
+            if (event) event.preventDefault();
+            
+            const asignacionId = document.getElementById('asignacionId').value;
+            if (!asignacionId) {
+                alert('No hay asignación para eliminar');
+                return;
+            }
+
+            if (!confirm('¿Estás seguro de que quieres eliminar esta asignación?')) {
+                return;
+            }
+
+            fetch('/calendario/api/eliminar-asignacion/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ asignacion_id: asignacionId })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    alert(result.message || 'Asignación eliminada correctamente');
+                    closeFaenaManagerModal();
+                    location.reload(); // Recargar para ver los cambios
+                } else {
+                    alert(result.error || 'Error al eliminar la asignación');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al comunicarse con el servidor');
+            });
+        }
+
+        function getCSRFToken() {
+            return document.querySelector('[name=csrfmiddlewaretoken]').value || 
+                   document.querySelector('meta[name="csrf-token"]').getAttribute('content') || '';
+        }
+
+        // ====== EVENT LISTENERS PARA CERRAR MODALES ======
+        
+        // Cerrar modales al hacer click fuera
+        document.addEventListener('click', function(event) {
+            // Modal de información personal
+            const personalModal = document.getElementById('personalInfoModal');
+            if (event.target === personalModal) {
+                closePersonalInfoModal();
+            }
+            
+            // Modal de gestión de faenas
+            const faenaModal = document.getElementById('faenaManagerModal');
+            if (event.target === faenaModal) {
+                closeFaenaManagerModal();
+            }
+            
+            // Modal de estado (existente)
+            const estadoModal = document.getElementById('estadoModal');
+            if (event.target === estadoModal) {
+                closeModal();
+            }
+        });
+
+        // Cerrar modales con ESC
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeModal();
+                closePersonalInfoModal();
+                closeFaenaManagerModal();
+            }
+        });
+
+        // ====== FUNCIONES PARA FILTRO MÚLTIPLE DE CARGO ======
+        function toggleCargoDropdown() {
+            const dropdown = document.getElementById('cargoFilterDropdown');
+            const options = document.getElementById('cargoFilterOptions');
+            
+            if (options.style.display === 'none') {
+                options.style.display = 'block';
+                dropdown.classList.add('open');
+            } else {
+                options.style.display = 'none';
+                dropdown.classList.remove('open');
+            }
+        }
+
+        function updateCargoFilter() {
+            const checkboxes = document.querySelectorAll('#cargoFilterOptions input[type="checkbox"]');
+            const textElement = document.getElementById('cargoFilterText');
+            const todosCheckbox = checkboxes[0]; // El primer checkbox es "Todos"
+            
+            // Si se marca "Todos", desmarcar todos los demás
+            if (todosCheckbox.checked && event.target === todosCheckbox) {
+                checkboxes.forEach((cb, index) => {
+                    if (index > 0) cb.checked = false;
+                });
+                textElement.textContent = 'Cargo: Todos';
+            } else if (event.target !== todosCheckbox) {
+                // Si se marca cualquier otro, desmarcar "Todos"
+                todosCheckbox.checked = false;
+                
+                // Actualizar el texto según las selecciones
+                const selectedValues = Array.from(checkboxes)
+                    .filter((cb, index) => cb.checked && index > 0)
+                    .map(cb => cb.nextSibling.textContent.trim());
+                
+                if (selectedValues.length === 0) {
+                    todosCheckbox.checked = true;
+                    textElement.textContent = 'Cargo: Todos';
+                } else if (selectedValues.length === 1) {
+                    textElement.textContent = `Cargo: ${selectedValues[0]}`;
+                } else {
+                    textElement.textContent = `Cargo: ${selectedValues.length} seleccionados`;
+                }
+            }
+            
+            // Aplicar filtros
+            aplicarTodosLosFiltros();
+        }
+
+        function getSelectedCargos() {
+            const checkboxes = document.querySelectorAll('#cargoFilterOptions input[type="checkbox"]');
+            const todosCheckbox = checkboxes[0];
+            
+            if (todosCheckbox.checked) {
+                return []; // Vacío significa "todos"
+            }
+            
+            return Array.from(checkboxes)
+                .filter((cb, index) => cb.checked && index > 0)
+                .map(cb => cb.value);
+        }
+
+        // Cerrar dropdown al hacer click fuera
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('cargoFilterDropdown');
+            if (!dropdown.contains(event.target)) {
+                document.getElementById('cargoFilterOptions').style.display = 'none';
+                dropdown.classList.remove('open');
+            }
+        });
+
+        // ====== FILTROS EN TIEMPO REAL (SIN RECARGAR) ======
+        function aplicarTodosLosFiltros() {
+            const searchTerm = document.querySelector('.search-input').value.toLowerCase().trim();
+            const faenaFilter = document.getElementById('faenaFilter').value;
+            const selectedCargos = getSelectedCargos(); // Nuevo: obtener cargos múltiples
+            
+            const calendarTable = document.getElementById('calendarTable');
+            const rows = Array.from(calendarTable.querySelectorAll('tr'));
+            
+            // Saltear el header (primera fila)
+            rows.slice(1).forEach(row => {
+                const personCell = row.querySelector('.person-info-cell');
+                if (!personCell) return;
+                
+                const personName = personCell.querySelector('.person-name').textContent.toLowerCase();
+                const personAssignment = personCell.querySelector('.person-assignment').textContent;
+                const personRole = personCell.querySelector('.person-role').textContent;
+                
+                let showRow = true;
+                
+                // Filtro de búsqueda por nombre/RUT
+                if (searchTerm) {
+                    let matchesSearch = false;
+                    
+                    // Buscar en nombre
+                    if (personName.includes(searchTerm)) {
+                        matchesSearch = true;
+                    }
+                    
+                    // Buscar datos del personal para obtener RUT
+                    const personData = calendarioData.personal.find(p => {
+                        const fullName = `${p.nombre} ${p.apepat} ${p.apemat}`.toLowerCase();
+                        return personName.includes(fullName.replace(/\s+/g, ' ').trim());
+                    });
+                    
+                    // Buscar en RUT si tenemos los datos del personal
+                    if (personData && personData.rut && personData.dvrut) {
+                        const rutCompleto = `${personData.rut}-${personData.dvrut}`.toLowerCase();
+                        const rutSinGuion = `${personData.rut}${personData.dvrut}`.toLowerCase();
+                        if (rutCompleto.includes(searchTerm) || rutSinGuion.includes(searchTerm)) {
+                            matchesSearch = true;
+                        }
+                    }
+                    
+                    if (!matchesSearch) {
+                        showRow = false;
+                    }
+                }
+                
+                // Filtro por faena (mejorado para buscar en faenas reales del backend)
+                if (faenaFilter) {
+                    const filterLower = faenaFilter.toLowerCase();
+                    let matchesFaena = false;
+                    
+                    // Buscar datos de la persona una sola vez
+                    const personData = calendarioData.personal.find(p => {
+                        const fullName = `${p.nombre} ${p.apepat} ${p.apemat}`.toLowerCase();
+                        return personName.includes(fullName.replace(/\s+/g, ' ').trim());
+                    });
+                    
+                    if (personData) {
+                        const faenas = personData.asignaciones_faena || [];
+                        
+                        if (filterLower === 'sin asignar') {
+                            // Personas que realmente no tienen faenas asignadas
+                            matchesFaena = faenas.length === 0;
+                            
+                        } else if (filterLower === 'múltiples') {
+                            // Personas que realmente tienen múltiples faenas
+                            matchesFaena = faenas.length > 1;
+                            
+                        } else {
+                            // Buscar en las faenas reales de la persona
+                            // AQUÍ está la magia: una persona con "Múltiples" aparecerá 
+                            // si alguna de sus faenas coincide con el filtro
+                            matchesFaena = faenas.some(af => 
+                                af.faena.nombre.toLowerCase().includes(filterLower)
+                            );
+                        }
+                    }
+                    
+                    if (!matchesFaena) {
+                        showRow = false;
+                    }
+                }
+                // Nota: Si faenaFilter está vacío (="Todas"), no se filtra nada, 
+                // por lo que TODOS aparecen, incluyendo "Sin asignar"
+                
+                // Filtro por cargo (múltiple)
+                if (selectedCargos.length > 0) {
+                    const cargoTextoLower = personRole.toLowerCase();
+                    let matchesCargo = false;
+                    
+                    // Verificar si el cargo de la persona coincide con alguno de los seleccionados
+                    for (const selectedCargo of selectedCargos) {
+                        if (selectedCargo === 'Sin cargo') {
+                            if (cargoTextoLower.includes('sin cargo')) {
+                                matchesCargo = true;
+                                break;
+                            }
+                        } else {
+                            if (cargoTextoLower.includes(selectedCargo.toLowerCase())) {
+                                matchesCargo = true;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (!matchesCargo) {
+                        showRow = false;
+                    }
+                }
+                // Nota: Si selectedCargos está vacío, significa "Todos" y no se filtra
+                
+                // Mostrar/ocultar fila con animación suave
+                if (showRow) {
+                    row.style.display = '';
+                    row.style.opacity = '1';
+                } else {
+                    row.style.opacity = '0.3';
+                    setTimeout(() => {
+                        if (row.style.opacity === '0.3') {
+                            row.style.display = 'none';
+                        }
+                    }, 150);
+                }
+            });
+            
+            // Actualizar contador de resultados
+            const visibleRows = rows.slice(1).filter(row => row.style.display !== 'none').length;
+            const totalRows = rows.length - 1;
+            
+            console.log(`🔍 Filtros aplicados:`, {
+                busqueda: searchTerm || 'ninguna',
+                faena: faenaFilter || 'todas',
+                cargos: selectedCargos.length === 0 ? 'todos' : selectedCargos
+            });
+            console.log(`👥 Resultados: ${visibleRows} de ${totalRows} personas`);
+            
+            // Debug: mostrar todas las asignaciones de faena
+            if (!faenaFilter || faenaFilter === '') {
+                const todasLasAsignaciones = [];
+                rows.slice(1).forEach(row => {
+                    const personCell = row.querySelector('.person-info-cell');
+                    const assignment = personCell?.querySelector('.person-assignment')?.textContent || '';
+                    const name = personCell?.querySelector('.person-name')?.textContent?.split(' ')[0] || 'Unknown';
+                    todasLasAsignaciones.push(`${name}: ${assignment}`);
+                });
+                
+                console.log(`📋 Todas las asignaciones:`, todasLasAsignaciones);
+                
+                const sinAsignar = todasLasAsignaciones.filter(asig => asig.toLowerCase().includes('sin asignar'));
+                console.log(`📊 Personal sin asignar encontrado: ${sinAsignar.length}`);
+                
+                if (sinAsignar.length > 0) {
+                    console.log(`👥 Quiénes no tienen faena:`, sinAsignar);
+                }
+            }
         }
 
         // Initialize calendar
         document.addEventListener('DOMContentLoaded', function() {
             updateCalendar();
+            
+            // Agregar event listeners para filtros (TODOS EN TIEMPO REAL)
+            document.querySelector('.search-input').addEventListener('input', aplicarTodosLosFiltros);
+            document.getElementById('faenaFilter').addEventListener('change', aplicarTodosLosFiltros);
+            // Nota: cargoFilter ahora usa checkboxes con updateCargoFilter()
+            
+            // SIEMPRE inicializar filtros en "Todos" (ignorar parámetros URL)
+            document.querySelector('.search-input').value = '';
+            document.getElementById('faenaFilter').value = '';
+            
+            // Inicializar filtro de cargo múltiple en "Todos"
+            const todosCheckbox = document.querySelector('#cargoFilterOptions input[type="checkbox"]');
+            if (todosCheckbox) {
+                todosCheckbox.checked = true;
+                // Desmarcar todos los otros checkboxes
+                const allCheckboxes = document.querySelectorAll('#cargoFilterOptions input[type="checkbox"]');
+                allCheckboxes.forEach((cb, index) => {
+                    if (index > 0) cb.checked = false;
+                });
+            }
+            
+            // No aplicar filtros iniciales - siempre mostrar todos
+            console.log('🔄 Filtros inicializados en "Todos" por defecto');
+            
+            console.log('✅ Filtros en tiempo real inicializados');
+            console.log('📊 Faenas disponibles:', calendarioData.faenas?.length || 0, '+ Sin asignar + Múltiples');
+            console.log('👔 Opciones de cargo: Incluye "Sin cargo"');
+            console.log('🔍 Estado inicial: Todos los filtros en "Todos" - Mostrando todas las personas');
+            
+            // Debug: verificar datos del personal desde el backend
+            console.log('🗂️ Personal total desde backend:', calendarioData.personal?.length || 0);
+            
+            if (calendarioData.personal && calendarioData.personal.length > 0) {
+                console.log('👥 Análisis de asignaciones desde backend:');
+                calendarioData.personal.forEach(person => {
+                    const faenas = person.asignaciones_faena || [];
+                    const statusText = faenas.length === 0 ? 'SIN FAENA' : 
+                                     faenas.length === 1 ? faenas[0].faena.nombre : 'MÚLTIPLES';
+                    console.log(`  ${person.nombre}: ${faenas.length} faenas → ${statusText}`);
+                });
+            }
         });
     </script>
 </body>
