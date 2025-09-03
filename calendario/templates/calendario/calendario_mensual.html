@@ -1953,7 +1953,7 @@
             console.log('Asignaciones activas:', asignacionesActivas);
 
             // Cargar faenas y turnos disponibles
-            cargarFaenasYTurnos().then(() => {
+            cargarFaenasYTurnos(personal).then(() => {
                 if (asignacionesActivas.length > 0) {
                     // Mostrar lista de asignaciones existentes
                     mostrarAsignacionesExistentes(asignacionesActivas);
@@ -2144,18 +2144,45 @@
             return fechaFormateada;
         }
 
-        function cargarFaenasYTurnos() {
+        function cargarFaenasYTurnos(personal) {
             return new Promise((resolve) => {
                 // Cargar faenas
                 const faenaSelect = document.getElementById('faenaSelect');
                 faenaSelect.innerHTML = '<option value="">Seleccionar faena...</option>';
                 
-                if (calendarioData.faenas) {
+                if (calendarioData.faenas && personal) {
+                    // Obtener IDs de faenas activas en el mes actual para este personal
+                    const faenasActivasEnMes = new Set();
+                    let tieneAsignacionesEnMes = false;
+                    
+                    if (personal.asignaciones_faena && personal.asignaciones_faena.length > 0) {
+                        personal.asignaciones_faena.forEach(asignacion => {
+                            if (asignacion.activo) {
+                                // Verificar si la asignación está activa en el mes actual
+                                const fechaInicio = new Date(asignacion.fecha_inicio);
+                                const fechaFin = asignacion.fecha_fin ? new Date(asignacion.fecha_fin) : null;
+                                const mesActual = new Date(calendarioData.current_year, calendarioData.current_month - 1, 1);
+                                const ultimoDiaMes = new Date(calendarioData.current_year, calendarioData.current_month, 0);
+                                
+                                // Verificar si hay solapamiento con el mes actual
+                                if (fechaInicio <= ultimoDiaMes && (!fechaFin || fechaFin >= mesActual)) {
+                                    faenasActivasEnMes.add(asignacion.faena.id);
+                                    tieneAsignacionesEnMes = true;
+                                }
+                            }
+                        });
+                    }
+                    
+                    // Lógica de filtrado:
+                    // - Si tiene asignaciones activas en el mes actual: mostrar solo esas faenas
+                    // - Si NO tiene asignaciones activas en el mes actual: mostrar TODAS las faenas disponibles
                     calendarioData.faenas.forEach(faena => {
-                        const option = document.createElement('option');
-                        option.value = faena.id;
-                        option.textContent = faena.nombre;
-                        faenaSelect.appendChild(option);
+                        if (!tieneAsignacionesEnMes || faenasActivasEnMes.has(faena.id)) {
+                            const option = document.createElement('option');
+                            option.value = faena.id;
+                            option.textContent = faena.nombre;
+                            faenaSelect.appendChild(option);
+                        }
                     });
                 }
 

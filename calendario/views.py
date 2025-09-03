@@ -38,6 +38,11 @@ def calendario_mensual(request):
     # Obtener datos del calendario
     calendario_data = obtener_calendario_mensual(year, month, faena_filter, cargo_filter, search_query)
     
+    # Obtener rango de fechas del mes para filtrar asignaciones
+    _, ultimo_dia = monthrange(year, month)
+    fecha_inicio_mes = date(year, month, 1)
+    fecha_fin_mes = date(year, month, ultimo_dia)
+    
     # Obtener opciones para filtros
     faenas = Faena.objects.filter(activo=True).order_by('nombre')
     turnos = Turno.objects.filter(activo=True).prefetch_related('bloques__estado').order_by('nombre')
@@ -90,7 +95,11 @@ def calendario_mensual(request):
                         'bloque_inicio_id': af.bloque_inicio.id if af.bloque_inicio else None,
                         'observaciones': af.observaciones,
                         'activo': af.activo
-                    } for af in p.asignaciones_faena.filter(activo=True)
+                    } for af in p.asignaciones_faena.filter(
+                        activo=True,
+                        fecha_inicio__lte=fecha_fin_mes,
+                        fecha_fin__gte=fecha_inicio_mes
+                    )
                 ]
             } for p in calendario_data['personal']
         ],
@@ -236,6 +245,10 @@ def calendario_mensual(request):
     
     # Agregar cargos para filtros
     calendario_json['cargos'] = list(cargos)
+    
+    # Agregar información del mes actual para el frontend
+    calendario_json['current_year'] = year
+    calendario_json['current_month'] = month
     
     # Actualizar el calendario en el context con los estados incluidos
     context['calendario'] = json.dumps(calendario_json, cls=DjangoJSONEncoder)
@@ -661,12 +674,14 @@ def crear_asignacion(request):
         
         if fecha_fin_date:
             # Nueva asignación tiene fecha fin: buscar cualquier solapamiento
+            # Dos rangos se solapan si: inicio1 <= fin2 AND inicio2 <= fin1
             solapamiento_query &= (
                 Q(fecha_inicio__lte=fecha_fin_date) & 
                 (Q(fecha_fin__isnull=True) | Q(fecha_fin__gte=fecha_inicio_date))
             )
         else:
-            # Nueva asignación sin fecha fin: buscar asignaciones que empiecen antes o en la fecha de inicio
+            # Nueva asignación sin fecha fin: buscar asignaciones que estén activas en la fecha de inicio
+            # Una asignación sin fin se solapa con cualquier asignación que esté activa en esa fecha
             solapamiento_query &= (
                 Q(fecha_inicio__lte=fecha_inicio_date) & 
                 (Q(fecha_fin__isnull=True) | Q(fecha_fin__gte=fecha_inicio_date))
